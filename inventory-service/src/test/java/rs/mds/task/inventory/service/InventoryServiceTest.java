@@ -3,6 +3,7 @@ package rs.mds.task.inventory.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import rs.mds.task.events.OrderCreatedEvent;
@@ -15,9 +16,12 @@ import rs.mds.task.inventory.repository.StockRepository;
 
 class InventoryServiceTest {
 
+    private final SimpleMeterRegistry meters = new SimpleMeterRegistry();
+
     private final InventoryService service = new InventoryService(
             new StockRepository(new StockProperties(Map.of("item-1", 5))),
-            new ReservationRepository());
+            new ReservationRepository(),
+            meters);
 
     @Test
     void reservesOrderWhenStockIsSufficient() {
@@ -45,6 +49,8 @@ class InventoryServiceTest {
 
         assertThat(second).isSameAs(first);
         assertThat(service.currentStock()).containsEntry("item-1", 3);
+        assertThat(meters.counter("inventory.orders.duplicates").count()).isEqualTo(1.0);
+        assertThat(meters.counter("inventory.orders.processed", "status", "RESERVED").count()).isEqualTo(1.0);
     }
 
     @Test

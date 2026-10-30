@@ -1,11 +1,14 @@
 package rs.mds.task.order.messaging;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -28,15 +31,32 @@ public class RabbitOrderEventPublisher implements OrderEventPublisher {
     private final RabbitTemplate rabbitTemplate;
     private final Duration confirmTimeout;
 
+    private final Counter published;
+    private final Counter failed;
+
     public RabbitOrderEventPublisher(RabbitTemplate rabbitTemplate,
-                                     @Value("${order.publisher.confirm-timeout:5s}") Duration confirmTimeout) {
+                                     @Value("${order.publisher.confirm-timeout:5s}") Duration confirmTimeout,
+                                     MeterRegistry meterRegistry) {
         this.rabbitTemplate = rabbitTemplate;
         this.confirmTimeout = confirmTimeout;
+        this.published = meterRegistry.counter("orders.events.published");
+        this.failed = meterRegistry.counter("orders.events.publish.failed");
     }
 
     @Override
     public void publish(OrderCreatedEvent event) {
+        try {
+            publishAndAwaitConfirm(event);
+            published.increment();
+        } catch (OrderPublishException e) {
+            failed.increment();
+            throw e;
+        }
+    }
+
+    private void publishAndAwaitConfirm(OrderCreatedEvent event) {
         CorrelationData correlation = new CorrelationData(event.eventId());
+        String correlationId = MDC.get(OrderMessaging.CORRELATION_ID_KEY);
         try {
             rabbitTemplate.convertAndSend(
                     OrderMessaging.EXCHANGE,
@@ -44,6 +64,9 @@ public class RabbitOrderEventPublisher implements OrderEventPublisher {
                     event,
                     message -> {
                         message.getMessageProperties().setMessageId(event.eventId());
+                        if (correlationId != null) {
+                            message.getMessageProperties().setCorrelationId(correlationId);
+                        }
                         return message;
                     },
                     correlation);

@@ -9,12 +9,33 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:guest}
     password: ${RABBITMQ_PASSWORD:guest}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
     listener:
       simple:
         # Rejected messages go to the dead-letter queue instead of being requeued forever.
         default-requeue-rejected: false
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+
+logging:
+  pattern:
+    level: "%5p [%X{correlationId:-}]"
+
 inventory:
+  publisher:
+    confirm-timeout: 5s
   # Delivery attempts per message with exponential backoff, then dead-lettered.
   retry:
     max-attempts: 3

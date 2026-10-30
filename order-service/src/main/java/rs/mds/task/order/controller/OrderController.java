@@ -5,6 +5,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import rs.mds.task.order.dto.CreateOrderRequest;
 import rs.mds.task.order.dto.OrderResponse;
+import rs.mds.task.order.model.OrderState;
 import rs.mds.task.order.service.OrderService;
 
 @RestController
@@ -34,5 +38,16 @@ public class OrderController {
     @ApiResponse(responseCode = "400", description = "Invalid request payload")
     public OrderResponse createOrder(@Valid @RequestBody CreateOrderRequest request) {
         return orderService.placeOrder(request);
+    }
+
+    @GetMapping("/{orderId}")
+    @Operation(summary = "Get order status",
+            description = "ACCEPTED until the inventory service answers, then RESERVED or REJECTED.")
+    @ApiResponse(responseCode = "200", description = "Current order state")
+    @ApiResponse(responseCode = "404", description = "Unknown order")
+    public ResponseEntity<OrderState> getOrder(@PathVariable String orderId) {
+        return orderService.findState(orderId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

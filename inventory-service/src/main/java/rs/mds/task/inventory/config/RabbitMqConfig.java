@@ -59,6 +59,33 @@ public class RabbitMqConfig {
                 .with(OrderMessaging.ORDER_CREATED_DEAD_LETTER_ROUTING_KEY);
     }
 
+    @Bean
+    Queue orderResultQueue() {
+        return QueueBuilder.durable(OrderMessaging.ORDER_RESULT_QUEUE)
+                .deadLetterExchange(OrderMessaging.DEAD_LETTER_EXCHANGE)
+                .deadLetterRoutingKey(OrderMessaging.ORDER_RESULT_DEAD_LETTER_ROUTING_KEY)
+                .build();
+    }
+
+    @Bean
+    Queue orderResultDeadLetterQueue() {
+        return QueueBuilder.durable(OrderMessaging.ORDER_RESULT_DLQ).build();
+    }
+
+    @Bean
+    Binding orderResultBinding(Queue orderResultQueue, TopicExchange ordersExchange) {
+        return BindingBuilder.bind(orderResultQueue)
+                .to(ordersExchange)
+                .with(OrderMessaging.ORDER_RESULT_ROUTING_KEY_PATTERN);
+    }
+
+    @Bean
+    Binding orderResultDeadLetterBinding(Queue orderResultDeadLetterQueue, DirectExchange deadLetterExchange) {
+        return BindingBuilder.bind(orderResultDeadLetterQueue)
+                .to(deadLetterExchange)
+                .with(OrderMessaging.ORDER_RESULT_DEAD_LETTER_ROUTING_KEY);
+    }
+
     /**
      * Always converts to the type declared by the listener method, ignoring the producer's
      * {@code __TypeId__} header, so the services are not coupled to each other's class names.

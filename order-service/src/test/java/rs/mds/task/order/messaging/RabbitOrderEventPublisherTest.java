@@ -8,6 +8,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.AmqpConnectException;
@@ -24,7 +25,7 @@ class RabbitOrderEventPublisherTest {
 
     private final RabbitTemplate rabbitTemplate = mock(RabbitTemplate.class);
     private final RabbitOrderEventPublisher publisher =
-            new RabbitOrderEventPublisher(rabbitTemplate, Duration.ofMillis(200));
+            new RabbitOrderEventPublisher(rabbitTemplate, Duration.ofMillis(200), new SimpleMeterRegistry());
     private final OrderCreatedEvent event = OrderCreatedEvent.create("123", "item-1", 2);
 
     /** Simulates the broker answering the publish with the given confirm. */

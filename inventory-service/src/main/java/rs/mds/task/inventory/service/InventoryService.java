@@ -1,5 +1,7 @@
 package rs.mds.task.inventory.service;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
@@ -22,9 +24,15 @@ public class InventoryService {
     private final StockRepository stockRepository;
     private final ReservationRepository reservationRepository;
 
-    public InventoryService(StockRepository stockRepository, ReservationRepository reservationRepository) {
+    private final MeterRegistry meterRegistry;
+    private final Counter duplicates;
+
+    public InventoryService(StockRepository stockRepository, ReservationRepository reservationRepository,
+                            MeterRegistry meterRegistry) {
         this.stockRepository = stockRepository;
         this.reservationRepository = reservationRepository;
+        this.meterRegistry = meterRegistry;
+        this.duplicates = meterRegistry.counter("inventory.orders.duplicates");
     }
 
     /**
@@ -39,6 +47,7 @@ public class InventoryService {
             return reserve(event);
         });
         if (!created[0]) {
+            duplicates.increment();
             log.info("Order {} already processed ({}), ignoring duplicate event {}",
                     event.orderId(), reservation.status(), event.eventId());
         }
@@ -62,6 +71,7 @@ public class InventoryService {
                 outcome == ReserveOutcome.RESERVED ? ReservationStatus.RESERVED : ReservationStatus.REJECTED,
                 outcome == ReserveOutcome.RESERVED ? null : outcome.name(),
                 Instant.now());
+        meterRegistry.counter("inventory.orders.processed", "status", reservation.status().name()).increment();
         log.info("Order {} for {} x {}: {}{}", event.orderId(), event.quantity(), event.itemId(),
                 reservation.status(), reservation.reason() == null ? "" : " (" + reservation.reason() + ")");
         return reservation;

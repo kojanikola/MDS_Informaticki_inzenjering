@@ -29,7 +29,7 @@
 - [x] 3. RabbitMQ publishing: exchange/queue config, JSON events, publisher confirms
 - [x] 4. Inventory consumer: in-memory stock, reserve/reject logic
 - [x] 5. Reliability: idempotency, retry/backoff, DLQ
-- [ ] 6. Result event back + Actuator health/metrics, correlation IDs
+- [x] 6. Result event back + Actuator health/metrics, correlation IDs
 - [ ] 7. Tests (unit + integration with Testcontainers)
 - [ ] 8. Dockerfiles + docker-compose
 - [ ] 9. README (run guide, architecture, assumptions, trade-offs)
