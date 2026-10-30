@@ -28,7 +28,7 @@
 - [x] 2. Order API: `POST /orders`, validation, error handling, Swagger
 - [x] 3. RabbitMQ publishing: exchange/queue config, JSON events, publisher confirms
 - [x] 4. Inventory consumer: in-memory stock, reserve/reject logic
-- [ ] 5. Reliability: idempotency, retry/backoff, DLQ
+- [x] 5. Reliability: idempotency, retry/backoff, DLQ
 - [ ] 6. Result event back + Actuator health/metrics, correlation IDs
 - [ ] 7. Tests (unit + integration with Testcontainers)
 - [ ] 8. Dockerfiles + docker-compose
