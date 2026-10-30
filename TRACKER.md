@@ -32,5 +32,5 @@
 - [x] 6. Result event back + Actuator health/metrics, correlation IDs
 - [x] 7. Tests (unit + integration with Testcontainers)
 - [x] 8. Dockerfiles + docker-compose
-- [ ] 9. README (run guide, architecture, assumptions, trade-offs)
+- [x] 9. README (run guide, architecture, assumptions, trade-offs)
 - [ ] 10. Final check from a clean clone, final commit before the deadline
