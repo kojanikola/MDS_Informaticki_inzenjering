@@ -25,7 +25,7 @@
 ## Steps
 - [ ] 0. Email: confirm receipt (Reply To All), create public repo, grant MDS access
 - [x] 1. Project skeleton: Maven parent, `order-service`, `inventory-service`, shared events contract
-- [ ] 2. Order API: `POST /orders`, validation, error handling, Swagger
+- [x] 2. Order API: `POST /orders`, validation, error handling, Swagger
 - [ ] 3. RabbitMQ publishing: exchange/queue config, JSON events, publisher confirms
 - [ ] 4. Inventory consumer: in-memory stock, reserve/reject logic
 - [ ] 5. Reliability: idempotency, retry/backoff, DLQ
