@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import rs.mds.task.order.dto.CreateOrderRequest;
 import rs.mds.task.order.dto.OrderResponse;
+import rs.mds.task.order.exception.OrderPublishException;
 import rs.mds.task.order.service.OrderService;
 
 @WebMvcTest(OrderController.class)
@@ -56,6 +57,19 @@ class OrderControllerTest {
                 .andExpect(jsonPath("$.errors.quantity").exists());
 
         verifyNoInteractions(orderService);
+    }
+
+    @Test
+    void brokerFailureReturns503() throws Exception {
+        when(orderService.placeOrder(new CreateOrderRequest("123", "item-1", 2)))
+                .thenThrow(new OrderPublishException("broker down"));
+
+        mockMvc.perform(post("/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"orderId": "123", "itemId": "item-1", "quantity": 2}
+                                """))
+                .andExpect(status().isServiceUnavailable());
     }
 
     @Test

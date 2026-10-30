@@ -26,7 +26,7 @@
 - [ ] 0. Email: confirm receipt (Reply To All), create public repo, grant MDS access
 - [x] 1. Project skeleton: Maven parent, `order-service`, `inventory-service`, shared events contract
 - [x] 2. Order API: `POST /orders`, validation, error handling, Swagger
-- [ ] 3. RabbitMQ publishing: exchange/queue config, JSON events, publisher confirms
+- [x] 3. RabbitMQ publishing: exchange/queue config, JSON events, publisher confirms
 - [ ] 4. Inventory consumer: in-memory stock, reserve/reject logic
 - [ ] 5. Reliability: idempotency, retry/backoff, DLQ
 - [ ] 6. Result event back + Actuator health/metrics, correlation IDs

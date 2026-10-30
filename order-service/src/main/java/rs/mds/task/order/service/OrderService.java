@@ -16,7 +16,7 @@ public class OrderService {
     }
 
     public OrderResponse placeOrder(CreateOrderRequest request) {
-        publisher.publish(new OrderCreatedEvent(request.orderId(), request.itemId(), request.quantity()));
+        publisher.publish(OrderCreatedEvent.create(request.orderId(), request.itemId(), request.quantity()));
         return OrderResponse.accepted(request.orderId());
     }
 }
