@@ -3,6 +3,7 @@ package rs.mds.task.inventory.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.ExchangeBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
@@ -15,10 +16,10 @@ import org.springframework.context.annotation.Configuration;
 import rs.mds.task.events.OrderMessaging;
 
 /**
- * Declares the same exchange, queue and binding as the order service so either can start first.
+ * Declares the same topology as the order service (including the dead-letter setup) so either can start first.
  */
 @Configuration
-@EnableConfigurationProperties(StockProperties.class)
+@EnableConfigurationProperties({StockProperties.class, RetryProperties.class})
 public class RabbitMqConfig {
 
     @Bean
@@ -27,8 +28,21 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    DirectExchange deadLetterExchange() {
+        return ExchangeBuilder.directExchange(OrderMessaging.DEAD_LETTER_EXCHANGE).durable(true).build();
+    }
+
+    @Bean
     Queue orderCreatedQueue() {
-        return QueueBuilder.durable(OrderMessaging.ORDER_CREATED_QUEUE).build();
+        return QueueBuilder.durable(OrderMessaging.ORDER_CREATED_QUEUE)
+                .deadLetterExchange(OrderMessaging.DEAD_LETTER_EXCHANGE)
+                .deadLetterRoutingKey(OrderMessaging.ORDER_CREATED_DEAD_LETTER_ROUTING_KEY)
+                .build();
+    }
+
+    @Bean
+    Queue orderCreatedDeadLetterQueue() {
+        return QueueBuilder.durable(OrderMessaging.ORDER_CREATED_DLQ).build();
     }
 
     @Bean
@@ -36,6 +50,13 @@ public class RabbitMqConfig {
         return BindingBuilder.bind(orderCreatedQueue)
                 .to(ordersExchange)
                 .with(OrderMessaging.ORDER_CREATED_ROUTING_KEY);
+    }
+
+    @Bean
+    Binding orderCreatedDeadLetterBinding(Queue orderCreatedDeadLetterQueue, DirectExchange deadLetterExchange) {
+        return BindingBuilder.bind(orderCreatedDeadLetterQueue)
+                .to(deadLetterExchange)
+                .with(OrderMessaging.ORDER_CREATED_DEAD_LETTER_ROUTING_KEY);
     }
 
     /**

@@ -9,9 +9,19 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:guest}
     password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        # Rejected messages go to the dead-letter queue instead of being requeued forever.
+        default-requeue-rejected: false
 
-# Initial in-memory stock, restored on every restart.
 inventory:
+  # Delivery attempts per message with exponential backoff, then dead-lettered.
+  retry:
+    max-attempts: 3
+    initial-interval: 1s
+    multiplier: 2.0
+    max-interval: 10s
+  # Initial in-memory stock, restored on every restart.
   stock:
     item-1: 10
     item-2: 5
