@@ -1,9 +1,9 @@
-# MDS Informatički inženjering – Java Backend task tracker
+﻿# MDS InformatiÄki inÅ¾enjering â€“ Java Backend task tracker
 
 **Deadline / final commit:** Monday 2.11.2026 at 08:00
 **Deliverables:** public git repo (grant MDS access), run/setup instructions, notes & assumptions, dockerized (Docker/Podman Compose)
-**Contact:** Stefan D. Janković, stjankovic@mds.rs (questions by email; also confirm receipt with "Reply To All")
-**Expected effort:** ~5–8 h. Priority: integration quality and engineering decisions, not business logic.
+**Contact:** Stefan D. JankoviÄ‡, stjankovic@mds.rs (questions by email; also confirm receipt with "Reply To All")
+**Expected effort:** ~5â€“8 h. Priority: integration quality and engineering decisions, not business logic.
 
 ## Requirements (from the task PDF)
 - Order API service: `POST /orders` with `{orderId, itemId, quantity}` publishes an event to the broker.
@@ -27,7 +27,7 @@
 - [x] 1. Project skeleton: Maven parent, `order-service`, `inventory-service`, shared events contract
 - [x] 2. Order API: `POST /orders`, validation, error handling, Swagger
 - [x] 3. RabbitMQ publishing: exchange/queue config, JSON events, publisher confirms
-- [ ] 4. Inventory consumer: in-memory stock, reserve/reject logic
+- [x] 4. Inventory consumer: in-memory stock, reserve/reject logic
 - [ ] 5. Reliability: idempotency, retry/backoff, DLQ
 - [ ] 6. Result event back + Actuator health/metrics, correlation IDs
 - [ ] 7. Tests (unit + integration with Testcontainers)

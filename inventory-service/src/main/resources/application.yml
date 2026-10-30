@@ -4,3 +4,15 @@ server:
 spring:
   application:
     name: inventory-service
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+# Initial in-memory stock, restored on every restart.
+inventory:
+  stock:
+    item-1: 10
+    item-2: 5
+    item-3: 0
