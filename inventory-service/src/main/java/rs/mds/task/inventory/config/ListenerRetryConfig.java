@@ -4,6 +4,7 @@ import java.util.Map;
 import org.springframework.amqp.rabbit.config.RetryInterceptorBuilder;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.retry.RejectAndDontRequeueRecoverer;
+import org.springframework.amqp.support.converter.MessageConversionException;
 import org.springframework.amqp.rabbit.config.ContainerCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,9 +21,11 @@ public class ListenerRetryConfig {
     @Bean
     SimpleRetryPolicy listenerRetryPolicy(RetryProperties properties) {
         // The listener wraps exceptions, so causes are traversed; anything not listed is retried.
+        // Poison messages (invalid content, unparseable payload) can never succeed, so they are not retried.
         return new SimpleRetryPolicy(
                 properties.maxAttempts(),
-                Map.of(InvalidOrderEventException.class, false),
+                Map.of(InvalidOrderEventException.class, false,
+                        MessageConversionException.class, false),
                 true,
                 true);
     }

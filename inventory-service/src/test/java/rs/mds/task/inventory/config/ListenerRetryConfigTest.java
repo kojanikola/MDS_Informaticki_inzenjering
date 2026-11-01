@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.support.ListenerExecutionFailedException;
+import org.springframework.amqp.support.converter.MessageConversionException;
 import org.springframework.retry.RetryContext;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import rs.mds.task.inventory.exception.InvalidOrderEventException;
@@ -38,5 +39,10 @@ class ListenerRetryConfigTest {
     @Test
     void doesNotRetryPoisonMessages() {
         assertThat(canRetryAfter(wrapped(new InvalidOrderEventException("bad")), 1)).isFalse();
+    }
+
+    @Test
+    void doesNotRetryUnparseablePayloads() {
+        assertThat(canRetryAfter(wrapped(new MessageConversionException("not json")), 1)).isFalse();
     }
 }
