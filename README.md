@@ -110,7 +110,7 @@ Seed stock (`inventory-service/src/main/resources/application.yml`): `item-1`: 1
 Requirements: Java 17, Maven 3.9+, and Docker for the integration tests.
 
 ```bash
-mvn verify          # unit + integration tests (53)
+mvn verify          # unit + integration tests (54)
 ```
 
 - **Unit tests**: controllers (MockMvc), services, repositories (including a concurrency test that proves stock is never oversold), publishers (simulated ack / nack / unroutable / timeout / broker down), retry policy.
