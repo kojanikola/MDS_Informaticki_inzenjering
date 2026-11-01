@@ -36,6 +36,8 @@ public class OrderController {
                     + "Stock is reserved asynchronously by the inventory service.")
     @ApiResponse(responseCode = "202", description = "Order accepted and published")
     @ApiResponse(responseCode = "400", description = "Invalid request payload")
+    @ApiResponse(responseCode = "409", description = "An order with this orderId already exists")
+    @ApiResponse(responseCode = "503", description = "The broker did not accept the order, safe to retry")
     public OrderResponse createOrder(@Valid @RequestBody CreateOrderRequest request) {
         return orderService.placeOrder(request);
     }

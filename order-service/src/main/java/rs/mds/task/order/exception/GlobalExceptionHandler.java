@@ -29,6 +29,11 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(DuplicateOrderException.class)
+    public ProblemDetail handleDuplicate(DuplicateOrderException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
     @ExceptionHandler(OrderPublishException.class)
     public ProblemDetail handlePublishFailure(OrderPublishException ex) {
         log.error("Order could not be published", ex);

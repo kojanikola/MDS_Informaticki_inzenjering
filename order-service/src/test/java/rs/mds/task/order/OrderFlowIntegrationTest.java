@@ -94,6 +94,21 @@ class OrderFlowIntegrationTest extends RabbitIntegrationTest {
     }
 
     @Test
+    void repeatedOrderIdIsRejectedAndPublishesOnlyOneEvent() throws Exception {
+        postOrder("it-duplicate", "corr-dup-1");
+
+        mockMvc.perform(post("/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"orderId": "it-duplicate", "itemId": "item-1", "quantity": 5}
+                                """))
+                .andExpect(status().isConflict());
+
+        assertThat(rabbitTemplate.receive(OrderMessaging.ORDER_CREATED_QUEUE, 10_000)).isNotNull();
+        assertThat(rabbitTemplate.receive(OrderMessaging.ORDER_CREATED_QUEUE, 500)).isNull();
+    }
+
+    @Test
     void unknownOrderIs404() throws Exception {
         mockMvc.perform(get("/orders/never-seen")).andExpect(status().isNotFound());
     }

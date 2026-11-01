@@ -19,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import rs.mds.task.order.dto.CreateOrderRequest;
 import rs.mds.task.order.dto.OrderResponse;
+import rs.mds.task.order.exception.DuplicateOrderException;
 import rs.mds.task.order.exception.OrderPublishException;
 import rs.mds.task.order.model.OrderState;
 import rs.mds.task.order.model.OrderStatus;
@@ -76,6 +77,20 @@ class OrderControllerTest {
                                 {"orderId": "123", "itemId": "item-1", "quantity": 2}
                                 """))
                 .andExpect(status().isServiceUnavailable());
+    }
+
+    @Test
+    void repeatedOrderIdReturns409() throws Exception {
+        when(orderService.placeOrder(new CreateOrderRequest("123", "item-1", 2)))
+                .thenThrow(new DuplicateOrderException("123"));
+
+        mockMvc.perform(post("/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"orderId": "123", "itemId": "item-1", "quantity": 2}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("Order 123 already exists"));
     }
 
     @Test

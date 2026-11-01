@@ -13,11 +13,20 @@ public class OrderStateRepository {
     private final ConcurrentHashMap<String, OrderState> states = new ConcurrentHashMap<>();
 
     /**
-     * Records the order as accepted unless a result already arrived, which can happen because the
-     * inventory answer may beat the HTTP thread that is still returning from the publish.
+     * Atomically claims the order id by recording the order as accepted.
+     *
+     * @return false if the id is already taken, so concurrent requests with the same id cannot both succeed
      */
-    public void markAcceptedIfAbsent(String orderId) {
-        states.putIfAbsent(orderId, new OrderState(orderId, OrderStatus.ACCEPTED, null, Instant.now()));
+    public boolean registerAcceptedIfAbsent(String orderId) {
+        return states.putIfAbsent(orderId, new OrderState(orderId, OrderStatus.ACCEPTED, null, Instant.now())) == null;
+    }
+
+    /**
+     * Releases a claimed id when publishing failed. Only an order still in ACCEPTED is removed, so a result
+     * that already arrived is never thrown away.
+     */
+    public void removeIfAccepted(String orderId) {
+        states.computeIfPresent(orderId, (id, state) -> state.status() == OrderStatus.ACCEPTED ? null : state);
     }
 
     /** Last write wins, so redelivered results are harmless. */

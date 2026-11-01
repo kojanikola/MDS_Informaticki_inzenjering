@@ -76,7 +76,7 @@ Seed stock (`inventory-service/src/main/resources/application.yml`): `item-1`: 1
 
 | Service | Endpoint | Result |
 |---|---|---|
-| order | `POST /orders` | `202` accepted and confirmed by the broker; `400` invalid payload (RFC 7807 problem with field errors); `503` broker did not accept the event |
+| order | `POST /orders` | `202` accepted and confirmed by the broker; `400` invalid payload (RFC 7807 problem with field errors); `409` the `orderId` already exists; `503` broker did not accept the event (the id is released, so retrying the same request is safe) |
 | order | `GET /orders/{orderId}` | `200` with status `ACCEPTED` / `RESERVED` / `REJECTED` (+ reason); `404` unknown |
 | inventory | `GET /inventory/stock` | current available quantity per item |
 | inventory | `GET /inventory/reservations/{orderId}` | `200` processing result; `404` not processed (yet) |
@@ -110,7 +110,7 @@ Seed stock (`inventory-service/src/main/resources/application.yml`): `item-1`: 1
 Requirements: Java 17, Maven 3.9+, and Docker for the integration tests.
 
 ```bash
-mvn verify          # unit + integration tests (54)
+mvn verify          # unit + integration tests (63)
 ```
 
 - **Unit tests**: controllers (MockMvc), services, repositories (including a concurrency test that proves stock is never oversold), publishers (simulated ack / nack / unroutable / timeout / broker down), retry policy.
@@ -132,10 +132,10 @@ Connection settings can be overridden with `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RA
 - **RabbitMQ over Kafka**: for a small command/result flow, per-message ack, DLX/DLQ, publisher confirms and routing are built in and need little setup. Kafka would fit replay or very high throughput better.
 - **Shared `events-contract` module**: keeps both sides in sync and a contract change breaks the build instead of production. The cost is build-time coupling; the alternative is duplicating DTOs or using a schema registry.
 - **Queue declared by both services** with identical arguments (RabbitMQ rejects a redeclaration with different arguments). This is what buffers orders while inventory is down. If you change queue arguments, delete the old queue on a long-lived broker first.
-- **`orderId` is the idempotency key and is assumed unique per order.** A second event with the same `orderId` but a different payload is treated as a duplicate (the first outcome wins). A stricter variant would detect the conflict.
+- **`orderId` is the idempotency key and is assumed unique per order.** The Order API answers `409 Conflict` for an id it has already accepted (the id is claimed atomically before publishing), so a rejected order is final and a new attempt needs a new id. As a second line of defence the inventory service also deduplicates by `orderId`: a repeated event (e.g. redelivery, or a client retry after an unconfirmed publish) returns the first outcome and never reserves stock twice.
 - **No database** (allowed by the task): stock, reservations and order states live in memory and reset on restart. In production the reservation record and the stock update would share one transaction and a unique key on `orderId`; the order service would use a transactional **outbox** to publish events atomically with its own state.
 - **`202 Accepted`, not `201`**: the order is accepted for asynchronous processing; its outcome is read via `GET /orders/{id}` (or the result event).
-- **Order API is not idempotent on retry by the client**: a client retrying `POST /orders` publishes a second event; the inventory service absorbs it through `orderId`.
+- **Client retries after a `503`** are safe: the claimed `orderId` is released when publishing fails. Edge case: if the confirm times out but the broker did receive the message, the retry publishes a second event, which inventory absorbs through `orderId`. A retry after a `202` gets `409`; the client reads the outcome with `GET /orders/{id}`.
 - **Publish confirm logic is duplicated** in both services on purpose (they are independent deployables); a shared library would couple them further.
 - **Security is out of scope**: default `guest/guest` broker credentials, no auth on the APIs, `show-details: always` on health. Not for production use.
 - **Not done on purpose**: UI, a real stock database, message schema versioning, distributed tracing (a correlation id is used instead), TLS.
